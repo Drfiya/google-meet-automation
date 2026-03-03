@@ -7,7 +7,7 @@ import {
     eachDayOfInterval, isSameMonth, isToday, isWeekend,
     addMonths, subMonths, parseISO,
 } from 'date-fns';
-import type { DayMeetingSummary, ScoreboardMetrics } from '@meet-pipeline/shared';
+import type { DayMeetingSummary, ScoreboardMetrics, CumulativeStats } from '@meet-pipeline/shared';
 
 // ── Helpers ──────────────────────────────────────
 
@@ -34,6 +34,7 @@ function heatmapClass(count: number): string {
 interface CalendarData {
     days: DayMeetingSummary[];
     scoreboard: ScoreboardMetrics;
+    cumulative: CumulativeStats;
 }
 
 // ── Main page component ──────────────────────────
@@ -82,6 +83,7 @@ export default function CalendarPage() {
     }, [currentMonth]);
 
     const scoreboard = data?.scoreboard;
+    const cumulative = data?.cumulative ?? null;
     const selectedDayData = selectedDay ? dayMap.get(selectedDay) : null;
     const timezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
 
@@ -113,6 +115,13 @@ export default function CalendarPage() {
                 </div>
             ) : scoreboard && (
                 <ScoreboardHeader scoreboard={scoreboard} />
+            )}
+
+            {/* ── All-Time Totals ─────────────────────── */}
+            {loading ? (
+                <div className="glass-card h-32 animate-pulse bg-theme-muted/20 mb-6" />
+            ) : cumulative && (
+                <AllTimeTotals cumulative={cumulative} />
             )}
 
             {/* ── Month Navigation ────────────────────── */}
@@ -461,3 +470,64 @@ function PairRow({ label, value, color }: { label: string; value: number; color:
         </div>
     );
 }
+
+/** Compact all-time totals section — text-driven, visually distinct from monthly stat cards. */
+function AllTimeTotals({ cumulative }: { cumulative: CumulativeStats }) {
+    const sinceLabel = cumulative.firstMeetingDate
+        ? format(parseISO(cumulative.firstMeetingDate), 'MMM yyyy')
+        : null;
+
+    return (
+        <div className="glass-card p-6 mb-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-theme-text-secondary uppercase tracking-wider">
+                    All-Time Totals
+                </h2>
+                {sinceLabel && (
+                    <span className="text-xs text-theme-text-muted">
+                        Since {sinceLabel}
+                    </span>
+                )}
+            </div>
+
+            {/* Primary stats line */}
+            <p className="text-sm text-theme-text-primary leading-relaxed">
+                <span className="font-semibold text-brand-400">{cumulative.totalMeetings}</span> meetings
+                {' · ~'}<span className="font-semibold text-accent-teal">{cumulative.totalHours.toFixed(1)}h</span>
+                {' · '}<span className="font-semibold text-amber-400">{cumulative.totalActionItems}</span> action items
+                {' · '}<span className="font-semibold text-emerald-400">{cumulative.actionItemCompletionRate}%</span> completion
+            </p>
+
+            {/* Secondary stats line */}
+            <p className="text-xs text-theme-text-tertiary mt-1.5">
+                {cumulative.topicsDiscussed.length} topics
+                {' · '}{cumulative.uniqueParticipants.length} participants
+                {cumulative.busiestDay && <>{' · Busiest day: '}<span className="text-theme-text-secondary">{cumulative.busiestDay}</span></>}
+            </p>
+
+            {/* Co-founder mini-stats */}
+            <div className="flex flex-wrap gap-3 mt-4">
+                <span className="inline-flex items-center gap-1.5 text-xs text-theme-text-secondary bg-brand-500/10 px-2.5 py-1 rounded-lg">
+                    <span className="w-2 h-2 rounded-full bg-brand-400" />
+                    Together: <span className="font-semibold">{cumulative.meetingsTogether}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-xs text-theme-text-secondary bg-accent-teal/10 px-2.5 py-1 rounded-lg">
+                    <span className="w-2 h-2 rounded-full bg-accent-teal" />
+                    Lutfiya solo: <span className="font-semibold">{cumulative.lutfiyaSolo}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-xs text-theme-text-secondary bg-accent-violet/10 px-2.5 py-1 rounded-lg">
+                    <span className="w-2 h-2 rounded-full bg-accent-violet" />
+                    Chris solo: <span className="font-semibold">{cumulative.chrisSolo}</span>
+                </span>
+            </div>
+
+            {/* Footer */}
+            <p className="text-xs text-theme-text-muted mt-3 pt-3 border-t border-theme-border/[0.06]">
+                Avg: <span className="font-medium text-theme-text-tertiary">{cumulative.averageMeetingsPerMonth.toFixed(1)}</span> meetings/month
+                {' · '}<span className="font-medium text-theme-text-tertiary">{cumulative.totalMonthsActive}</span> active month{cumulative.totalMonthsActive !== 1 ? 's' : ''}
+            </p>
+        </div>
+    );
+}
+

@@ -159,3 +159,25 @@ export interface ScoreboardMetrics {
     // No-meeting weekdays
     freeDays: number;
 }
+
+/** Cumulative all-time statistics across all transcripts and action items. */
+export interface CumulativeStats {
+    totalMeetings: number;
+    totalHours: number;              // estimated from word count (totalWords / 150 / 60)
+    totalWords: number;
+    totalActionItems: number;
+    completedActionItems: number;
+    actionItemCompletionRate: number; // 0-100
+    topicsDiscussed: string[];       // all unique group_labels ever
+    uniqueParticipants: string[];    // every participant name ever seen
+    meetingsByParticipant: Record<string, number>;
+    busiestDay: string;              // all-time busiest day of week
+    firstMeetingDate: string | null; // ISO date of earliest transcript
+    lastMeetingDate: string | null;  // ISO date of most recent transcript
+    totalMonthsActive: number;       // number of distinct YYYY-MM months with meetings
+    meetingsTogether: number;
+    lutfiyaSolo: number;
+    chrisSolo: number;
+    withExternalGuests: number;
+    averageMeetingsPerMonth: number;
+}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import type { MeetingTranscript, QueryResponse, ActionItem, ActivityLogEntry, ScoreboardMetrics } from '@meet-pipeline/shared';
+import type { MeetingTranscript, QueryResponse, ActionItem, ActivityLogEntry, ScoreboardMetrics, CumulativeStats } from '@meet-pipeline/shared';
 import { UploadModal } from '../components/upload-modal';
 
 /**
@@ -17,6 +17,7 @@ export default function DashboardPage() {
     const [actionItems, setActionItems] = useState<ActionItem[]>([]);
     const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
     const [calendarScoreboard, setCalendarScoreboard] = useState<ScoreboardMetrics | null>(null);
+    const [calendarCumulative, setCalendarCumulative] = useState<CumulativeStats | null>(null);
 
     const refreshData = () => {
         fetch('/api/transcripts')
@@ -40,8 +41,8 @@ export default function DashboardPage() {
         fetch('/api/calendar')
             .then((r) => r.json())
             .then((data) => {
-                const resp = data as { scoreboard?: ScoreboardMetrics };
-                if (resp?.scoreboard) setCalendarScoreboard(resp.scoreboard);
+                if (data?.scoreboard) setCalendarScoreboard(data.scoreboard);
+                if (data?.cumulative) setCalendarCumulative(data.cumulative);
             })
             .catch(() => { });
     };
@@ -172,7 +173,7 @@ export default function DashboardPage() {
             </div>
 
             {/* This Month at a Glance */}
-            <CalendarWidget scoreboard={calendarScoreboard} />
+            <CalendarWidget scoreboard={calendarScoreboard} cumulative={calendarCumulative} />
 
             {/* Open Action Items Summary */}
             {openItems.length > 0 && (
@@ -358,7 +359,10 @@ function ActionItemsSummary({ openItems, onStatusChange }: {
     );
 }
 
-function CalendarWidget({ scoreboard }: { scoreboard: ScoreboardMetrics | null }) {
+function CalendarWidget({ scoreboard, cumulative }: {
+    scoreboard: ScoreboardMetrics | null;
+    cumulative: CumulativeStats | null;
+}) {
     if (!scoreboard) return null;
 
     return (
@@ -374,6 +378,14 @@ function CalendarWidget({ scoreboard }: { scoreboard: ScoreboardMetrics | null }
                         {' · '}<span className="font-semibold text-accent-violet">{scoreboard.topicsDiscussed.length}</span> topics
                         {' · '}<span className="font-semibold text-emerald-400">{scoreboard.actionItemCompletionRate}%</span> completion
                     </p>
+                    {cumulative && (
+                        <p className="text-xs text-theme-text-tertiary mt-1.5">
+                            All-time: <span className="font-medium text-theme-text-secondary">{cumulative.totalMeetings}</span> meetings
+                            {' · ~'}<span className="font-medium text-theme-text-secondary">{cumulative.totalHours.toFixed(1)}h</span>
+                            {' · '}<span className="font-medium text-theme-text-secondary">{cumulative.totalActionItems}</span> action items
+                            {' · '}<span className="font-medium text-theme-text-secondary">{cumulative.averageMeetingsPerMonth.toFixed(1)}</span>/month avg
+                        </p>
+                    )}
                 </div>
                 <Link
                     href="/calendar"

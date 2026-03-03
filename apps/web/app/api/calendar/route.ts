@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '../../../lib/supabase';
-import type { DayMeetingSummary, ScoreboardMetrics } from '@meet-pipeline/shared';
+import type { DayMeetingSummary, ScoreboardMetrics, CumulativeStats } from '@meet-pipeline/shared';
 import {
     startOfMonth, endOfMonth, format, parseISO,
     eachDayOfInterval, getWeeksInMonth, isWeekend,
@@ -49,6 +49,31 @@ function computeBusiestDay(transcripts: { meeting_date: string }[]): string {
     return busiest;
 }
 
+/** Compute co-founder pair breakdown from a set of transcripts. */
+function computeCoFounderPairs(txns: { participants: string[] | null }[]) {
+    let meetingsTogether = 0;
+    let lutfiyaSolo = 0;
+    let chrisSolo = 0;
+    let withExternalGuests = 0;
+
+    for (const t of txns) {
+        const participants = (t.participants ?? []) as string[];
+        const hasLutfiya = participants.some(isLutfiya);
+        const hasChris = participants.some(isChris);
+        const hasExternal = participants.some(
+            (p) => !isLutfiya(p) && !isChris(p)
+        );
+
+        if (hasLutfiya && hasChris) meetingsTogether++;
+        else if (hasLutfiya && !hasChris) lutfiyaSolo++;
+        else if (hasChris && !hasLutfiya) chrisSolo++;
+
+        if (hasExternal) withExternalGuests++;
+    }
+
+    return { meetingsTogether, lutfiyaSolo, chrisSolo, withExternalGuests };
+}
+
 // ── Route handler ────────────────────────────────
 
 export async function GET(request: NextRequest) {
@@ -64,20 +89,26 @@ export async function GET(request: NextRequest) {
         const startDate = startOfMonth(monthDate).toISOString();
         const endDate = endOfMonth(monthDate).toISOString();
 
-        // Fetch transcripts in range
-        const { data: transcripts } = await supabase
-            .from('transcripts')
-            .select('id, meeting_title, meeting_date, participants, word_count, extraction_method')
-            .gte('meeting_date', startDate)
-            .lte('meeting_date', endDate)
-            .order('meeting_date', { ascending: true });
-
-        // Fetch action items created in range
-        const { data: actionItems } = await supabase
-            .from('action_items')
-            .select('id, status, group_label, assigned_to, created_at')
-            .gte('created_at', startDate)
-            .lte('created_at', endDate);
+        // ── Fetch all four datasets in parallel ──────
+        const [
+            { data: transcripts },
+            { data: actionItems },
+            { data: allTranscripts },
+            { data: allActionItems },
+        ] = await Promise.all([
+            supabase.from('transcripts')
+                .select('id, meeting_title, meeting_date, participants, word_count, extraction_method')
+                .gte('meeting_date', startDate).lte('meeting_date', endDate)
+                .order('meeting_date', { ascending: true }),
+            supabase.from('action_items')
+                .select('id, status, group_label, assigned_to, created_at')
+                .gte('created_at', startDate).lte('created_at', endDate),
+            supabase.from('transcripts')
+                .select('id, meeting_title, meeting_date, participants, word_count, extraction_method')
+                .order('meeting_date', { ascending: true }),
+            supabase.from('action_items')
+                .select('id, status, group_label, assigned_to, created_at'),
+        ]);
 
         const txns = transcripts ?? [];
         const items = actionItems ?? [];
@@ -116,7 +147,7 @@ export async function GET(request: NextRequest) {
             day.uniqueParticipants = [...pSet];
         }
 
-        // ── Scoreboard calculations ──────────────────
+        // ── Monthly scoreboard calculations ──────────
 
         const totalWords = txns.reduce((sum, t) => sum + (t.word_count ?? 0), 0);
         const totalMeetings = txns.length;
@@ -162,26 +193,8 @@ export async function GET(request: NextRequest) {
         });
         const streakDays = computeStreak(allDays, dayMap);
 
-        // Co-founder pair analysis
-        let meetingsTogether = 0;
-        let lutfiyaSolo = 0;
-        let chrisSolo = 0;
-        let withExternalGuests = 0;
-
-        for (const t of txns) {
-            const participants = (t.participants ?? []) as string[];
-            const hasLutfiya = participants.some(isLutfiya);
-            const hasChris = participants.some(isChris);
-            const hasExternal = participants.some(
-                (p) => !isLutfiya(p) && !isChris(p)
-            );
-
-            if (hasLutfiya && hasChris) meetingsTogether++;
-            else if (hasLutfiya && !hasChris) lutfiyaSolo++;
-            else if (hasChris && !hasLutfiya) chrisSolo++;
-
-            if (hasExternal) withExternalGuests++;
-        }
+        // Co-founder pair analysis (monthly)
+        const monthlyPairs = computeCoFounderPairs(txns);
 
         // No-meeting weekdays
         const freeDays = allDays.filter((d) => {
@@ -206,21 +219,97 @@ export async function GET(request: NextRequest) {
             averageMeetingsPerWeek,
             actionItemCompletionRate,
             streakDays,
-            meetingsTogether,
-            lutfiyaSolo,
-            chrisSolo,
-            withExternalGuests,
+            meetingsTogether: monthlyPairs.meetingsTogether,
+            lutfiyaSolo: monthlyPairs.lutfiyaSolo,
+            chrisSolo: monthlyPairs.chrisSolo,
+            withExternalGuests: monthlyPairs.withExternalGuests,
             actionItemsCreated,
             actionItemsCompleted,
             freeDays,
         };
 
+        // ── Cumulative all-time stats ────────────────
+
+        const allTxns = allTranscripts ?? [];
+        const allItems = allActionItems ?? [];
+
+        const cumTotalWords = allTxns.reduce((sum, t) => sum + (t.word_count ?? 0), 0);
+        const cumTotalMeetings = allTxns.length;
+        const cumTotalHours = parseFloat((cumTotalWords / 150 / 60).toFixed(1));
+
+        const cumTotalActionItems = allItems.length;
+        const cumCompletedItems = allItems.filter(
+            (i) => i.status === 'done' || i.status === 'dismissed'
+        ).length;
+        const cumCompletionRate = cumTotalActionItems > 0
+            ? parseFloat(((cumCompletedItems / cumTotalActionItems) * 100).toFixed(1))
+            : 0;
+
+        // All-time topics
+        const cumTopicSet = new Set<string>();
+        for (const i of allItems) {
+            if (i.group_label) cumTopicSet.add(i.group_label);
+        }
+
+        // All-time participants
+        const cumParticipantSet = new Set<string>();
+        const cumParticipantCounts: Record<string, number> = {};
+        for (const t of allTxns) {
+            for (const p of (t.participants ?? [])) {
+                cumParticipantSet.add(p);
+                cumParticipantCounts[p] = (cumParticipantCounts[p] ?? 0) + 1;
+            }
+        }
+
+        // All-time busiest day
+        const cumBusiestDay = computeBusiestDay(allTxns);
+
+        // Date range and months active
+        const firstMeetingDate = allTxns.length > 0 ? allTxns[0].meeting_date : null;
+        const lastMeetingDate = allTxns.length > 0 ? allTxns[allTxns.length - 1].meeting_date : null;
+
+        const activeMonths = new Set<string>();
+        for (const t of allTxns) {
+            activeMonths.add(format(parseISO(t.meeting_date), 'yyyy-MM'));
+        }
+        const totalMonthsActive = activeMonths.size;
+
+        // All-time co-founder pairs
+        const cumPairs = computeCoFounderPairs(allTxns);
+
+        const averageMeetingsPerMonth = totalMonthsActive > 0
+            ? parseFloat((cumTotalMeetings / totalMonthsActive).toFixed(1))
+            : 0;
+
+        const cumulative: CumulativeStats = {
+            totalMeetings: cumTotalMeetings,
+            totalHours: cumTotalHours,
+            totalWords: cumTotalWords,
+            totalActionItems: cumTotalActionItems,
+            completedActionItems: cumCompletedItems,
+            actionItemCompletionRate: cumCompletionRate,
+            topicsDiscussed: [...cumTopicSet],
+            uniqueParticipants: [...cumParticipantSet],
+            meetingsByParticipant: cumParticipantCounts,
+            busiestDay: cumBusiestDay,
+            firstMeetingDate,
+            lastMeetingDate,
+            totalMonthsActive,
+            meetingsTogether: cumPairs.meetingsTogether,
+            lutfiyaSolo: cumPairs.lutfiyaSolo,
+            chrisSolo: cumPairs.chrisSolo,
+            withExternalGuests: cumPairs.withExternalGuests,
+            averageMeetingsPerMonth,
+        };
+
         return NextResponse.json({
             days: [...dayMap.values()],
             scoreboard,
+            cumulative,
         });
     } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
         return NextResponse.json({ error: msg }, { status: 500 });
     }
 }
+
