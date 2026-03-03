@@ -43,3 +43,58 @@ export async function GET(
         return NextResponse.json({ error: msg }, { status: 500 });
     }
 }
+
+/**
+ * DELETE /api/transcripts/[id] — Delete a transcript and its related data.
+ * Removes associated action_items, transcript_chunks, and logs the deletion.
+ */
+export async function DELETE(
+    _request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const supabase = getServerSupabase();
+
+        // Verify the transcript exists first (and grab title for the activity log)
+        const { data: existing, error: fetchErr } = await supabase
+            .from('transcripts')
+            .select('id, meeting_title')
+            .eq('id', id)
+            .single();
+
+        if (fetchErr || !existing) {
+            return NextResponse.json({ error: 'Transcript not found' }, { status: 404 });
+        }
+
+        // Delete related action items
+        await supabase.from('action_items').delete().eq('transcript_id', id);
+
+        // Delete related embedding chunks
+        await supabase.from('transcript_chunks').delete().eq('transcript_id', id);
+
+        // Delete the transcript itself
+        const { error: deleteErr } = await supabase
+            .from('transcripts')
+            .delete()
+            .eq('id', id);
+
+        if (deleteErr) {
+            return NextResponse.json({ error: deleteErr.message }, { status: 500 });
+        }
+
+        // Log the deletion
+        await supabase.from('activity_log').insert({
+            event_type: 'transcript.deleted',
+            entity_type: 'transcript',
+            entity_id: id,
+            summary: `Deleted transcript: ${existing.meeting_title}`,
+            actor: 'user',
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        return NextResponse.json({ error: msg }, { status: 500 });
+    }
+}

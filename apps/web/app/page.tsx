@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import type { MeetingTranscript, QueryResponse } from '@meet-pipeline/shared';
+import type { MeetingTranscript, QueryResponse, ActionItem, ActivityLogEntry } from '@meet-pipeline/shared';
 
 /**
  * Dashboard Home — summary stats, recent transcripts, and a query bar.
@@ -13,6 +13,8 @@ export default function DashboardPage() {
     const [query, setQuery] = useState('');
     const [answer, setAnswer] = useState<QueryResponse | null>(null);
     const [querying, setQuerying] = useState(false);
+    const [actionItems, setActionItems] = useState<ActionItem[]>([]);
+    const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
 
     useEffect(() => {
         fetch('/api/transcripts')
@@ -22,6 +24,16 @@ export default function DashboardPage() {
                 setLoading(false);
             })
             .catch(() => setLoading(false));
+
+        fetch('/api/action-items')
+            .then((r) => r.json())
+            .then((data) => { if (Array.isArray(data)) setActionItems(data); })
+            .catch(() => {});
+
+        fetch('/api/activity?limit=10')
+            .then((r) => r.json())
+            .then((data) => { if (Array.isArray(data)) setActivity(data); })
+            .catch(() => {});
     }, []);
 
     const handleSearch = async () => {
@@ -41,6 +53,22 @@ export default function DashboardPage() {
             setQuerying(false);
         }
     };
+
+    const handleStatusChange = async (id: string, newStatus: ActionItem['status']) => {
+        try {
+            const res = await fetch(`/api/action-items/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+            const updated = (await res.json()) as ActionItem;
+            setActionItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+        } catch {
+            // Silently fail — item stays in current state
+        }
+    };
+
+    const openItems = actionItems.filter((i) => i.status === 'open' || i.status === 'in_progress');
 
     // Stats
     const totalTranscripts = transcripts.length;
@@ -122,11 +150,19 @@ export default function DashboardPage() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <StatCard label="Total Transcripts" value={totalTranscripts} color="from-brand-500 to-brand-600" loading={loading} />
                 <StatCard label="This Week" value={thisWeek} color="from-accent-teal to-emerald-500" loading={loading} />
                 <StatCard label="This Month" value={thisMonth} color="from-accent-violet to-purple-500" loading={loading} />
             </div>
+
+            {/* Open Action Items Summary */}
+            {openItems.length > 0 && (
+                <ActionItemsSummary
+                    openItems={openItems}
+                    onStatusChange={handleStatusChange}
+                />
+            )}
 
             {/* Top Participants */}
             {topParticipants.length > 0 && (
@@ -146,7 +182,7 @@ export default function DashboardPage() {
 
             {/* Recent Transcripts */}
             <div className="glass-card overflow-hidden">
-                <div className="px-6 py-4 border-b border-theme-border/[0.06]">
+                <div className="p-6 border-b border-theme-border/[0.06]">
                     <h2 className="text-sm font-semibold text-theme-text-secondary uppercase tracking-wider">
                         Recent Transcripts
                     </h2>
@@ -158,15 +194,15 @@ export default function DashboardPage() {
                         No transcripts yet. Processed emails will appear here.
                     </div>
                 ) : (
-                    <div className="divide-y divide-theme-border/[0.04]">
+                    <div className="overflow-x-auto divide-y divide-theme-border/[0.04]">
                         {recent.map((t) => (
                             <Link
                                 key={t.transcript_id}
                                 href={`/transcripts/${t.transcript_id}`}
                                 className="table-row flex items-center justify-between px-6 py-4"
                             >
-                                <div>
-                                    <p className="text-sm font-medium text-theme-text-primary">{t.meeting_title}</p>
+                                <div className="min-w-0 flex-1 mr-4">
+                                    <p className="text-sm font-medium text-theme-text-primary truncate max-w-xs sm:max-w-sm md:max-w-md">{t.meeting_title}</p>
                                     <p className="text-xs text-theme-text-tertiary mt-0.5">
                                         {new Date(t.meeting_date).toLocaleDateString()} · {t.participants.length} participants
                                     </p>
@@ -184,6 +220,35 @@ export default function DashboardPage() {
                     </div>
                 )}
             </div>
+
+            {/* Activity Feed */}
+            {activity.length > 0 && (
+                <div className="glass-card overflow-hidden mt-8">
+                    <div className="p-6 border-b border-theme-border/[0.06]">
+                        <h2 className="text-sm font-semibold text-theme-text-secondary uppercase tracking-wider">
+                            Recent Activity
+                        </h2>
+                    </div>
+                    <div className="divide-y divide-theme-border/[0.04]">
+                        {activity.map((entry) => (
+                            <div key={entry.id} className="px-6 py-3 flex items-start gap-3">
+                                <span className={`mt-1 inline-block w-2 h-2 rounded-full flex-shrink-0 ${
+                                    entry.event_type.includes('created') ? 'bg-emerald-500' :
+                                    entry.event_type.includes('updated') ? 'bg-brand-400' :
+                                    entry.event_type.includes('processed') ? 'bg-accent-teal' : 'bg-theme-text-muted'
+                                }`} />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm text-theme-text-primary">{entry.summary}</p>
+                                    <p className="text-xs text-theme-text-muted mt-0.5">
+                                        {new Date(entry.created_at).toLocaleString()}
+                                        {entry.actor && entry.actor !== 'system' && ` · ${entry.actor}`}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -201,6 +266,77 @@ function StatCard({ label, value, color, loading }: {
             <p className="text-3xl font-bold text-theme-text-primary mt-2">
                 {loading ? '—' : value}
             </p>
+        </div>
+    );
+}
+
+function ActionItemsSummary({ openItems, onStatusChange }: {
+    openItems: ActionItem[];
+    onStatusChange: (id: string, status: ActionItem['status']) => void;
+}) {
+    const assigneeCounts = new Map<string, number>();
+    openItems.forEach((i) => {
+        const key = i.assigned_to ?? 'Unassigned';
+        assigneeCounts.set(key, (assigneeCounts.get(key) ?? 0) + 1);
+    });
+
+    const now = new Date();
+    const overdueCount = openItems.filter(
+        (i) => i.due_date && new Date(i.due_date) < now
+    ).length;
+
+    const urgentItems = openItems
+        .filter((i) => i.priority === 'urgent' || i.priority === 'high')
+        .slice(0, 3);
+
+    return (
+        <div className="glass-card p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-theme-text-secondary uppercase tracking-wider">
+                    Open Action Items
+                </h2>
+                <Link
+                    href="/action-items"
+                    className="text-xs text-brand-400 hover:text-brand-300 transition-colors font-medium"
+                >
+                    View All →
+                </Link>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+                {[...assigneeCounts.entries()].map(([name, count]) => (
+                    <span key={name} className="badge-info">
+                        {name}: {count}
+                    </span>
+                ))}
+                {overdueCount > 0 && (
+                    <span className="badge-error">
+                        {overdueCount} overdue
+                    </span>
+                )}
+            </div>
+
+            {urgentItems.length > 0 && (
+                <div className="space-y-2">
+                    {urgentItems.map((item) => (
+                        <div key={item.id} className="flex items-center gap-2">
+                            <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
+                                item.priority === 'urgent' ? 'bg-rose-500' : 'bg-amber-500'
+                            }`} />
+                            <p className="text-sm text-theme-text-primary truncate flex-1">{item.title}</p>
+                            {item.assigned_to && (
+                                <span className="text-xs text-theme-text-tertiary flex-shrink-0">{item.assigned_to}</span>
+                            )}
+                            <button
+                                onClick={() => onStatusChange(item.id, item.status === 'open' ? 'in_progress' : 'done')}
+                                className="px-2.5 py-0.5 text-[11px] rounded-lg bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 transition-colors flex-shrink-0"
+                            >
+                                {item.status === 'open' ? 'Start' : 'Done'}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

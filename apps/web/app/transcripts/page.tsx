@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import type { MeetingTranscript } from '@meet-pipeline/shared';
+import type { MeetingTranscript, ActionItem } from '@meet-pipeline/shared';
 
 type SortField = 'meeting_date' | 'meeting_title' | 'word_count';
 type SortDirection = 'asc' | 'desc';
+type ExtractionState = { status: 'idle' } | { status: 'extracting' } | { status: 'done'; count: number };
 
 /**
  * Transcript Library — filterable, sortable table of all transcripts.
@@ -17,16 +18,59 @@ export default function TranscriptsPage() {
     const [participantFilter, setParticipantFilter] = useState('');
     const [sortField, setSortField] = useState<SortField>('meeting_date');
     const [sortDir, setSortDir] = useState<SortDirection>('desc');
+    const [extractionStates, setExtractionStates] = useState<Map<string, ExtractionState>>(new Map());
+    const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     useEffect(() => {
         fetch('/api/transcripts')
-            .then((r) => r.json())
-            .then((data: MeetingTranscript[]) => {
+            .then((r) => r.json() as Promise<MeetingTranscript[]>)
+            .then((data) => {
                 setTranscripts(data);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
     }, []);
+
+    const handleExtract = async (transcriptId: string) => {
+        setExtractionStates((prev) => new Map(prev).set(transcriptId, { status: 'extracting' }));
+        try {
+            const res = await fetch('/api/action-items/extract', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transcript_id: transcriptId }),
+            });
+            const data = (await res.json()) as { items?: ActionItem[]; count?: number };
+            const count = data.count ?? data.items?.length ?? 0;
+            setExtractionStates((prev) => new Map(prev).set(transcriptId, { status: 'done', count }));
+        } catch {
+            setExtractionStates((prev) => new Map(prev).set(transcriptId, { status: 'idle' }));
+        }
+    };
+
+    const handleDelete = async (transcriptId: string) => {
+        // Two-click confirmation: first click sets confirmDeleteId, second click executes
+        if (confirmDeleteId !== transcriptId) {
+            setConfirmDeleteId(transcriptId);
+            return;
+        }
+        setConfirmDeleteId(null);
+        setDeletingIds((prev) => new Set(prev).add(transcriptId));
+        try {
+            const res = await fetch(`/api/transcripts/${transcriptId}`, { method: 'DELETE' });
+            if (res.ok) {
+                setTranscripts((prev) => prev.filter((t) => t.transcript_id !== transcriptId));
+            }
+        } catch {
+            // Silently handled — row stays visible
+        } finally {
+            setDeletingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(transcriptId);
+                return next;
+            });
+        }
+    };
 
     const filtered = useMemo(() => {
         let result = transcripts;
@@ -130,18 +174,21 @@ export default function TranscriptsPage() {
                             <th className="text-right px-6 py-3 text-xs font-semibold text-theme-text-tertiary uppercase tracking-wider">
                                 Method
                             </th>
+                            <th className="text-right px-6 py-3 text-xs font-semibold text-theme-text-tertiary uppercase tracking-wider">
+                                Actions
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-theme-text-tertiary">
+                                <td colSpan={6} className="px-6 py-12 text-center text-theme-text-tertiary">
                                     Loading transcripts...
                                 </td>
                             </tr>
                         ) : filtered.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-theme-text-tertiary">
+                                <td colSpan={6} className="px-6 py-12 text-center text-theme-text-tertiary">
                                     {search || participantFilter
                                         ? 'No transcripts match your filters.'
                                         : 'No transcripts yet.'}
@@ -183,6 +230,29 @@ export default function TranscriptsPage() {
                                             {t.extraction_method}
                                         </span>
                                     </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <ExtractButton
+                                                state={extractionStates.get(t.transcript_id) ?? { status: 'idle' }}
+                                                onExtract={() => handleExtract(t.transcript_id)}
+                                            />
+                                            <button
+                                                onClick={() => handleDelete(t.transcript_id)}
+                                                disabled={deletingIds.has(t.transcript_id)}
+                                                className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                                                    confirmDeleteId === t.transcript_id
+                                                        ? 'bg-rose-500/20 text-rose-400 ring-1 ring-rose-500/30'
+                                                        : 'text-theme-text-muted hover:text-rose-400 hover:bg-rose-500/10'
+                                                }`}
+                                            >
+                                                {deletingIds.has(t.transcript_id)
+                                                    ? '...'
+                                                    : confirmDeleteId === t.transcript_id
+                                                        ? 'Confirm?'
+                                                        : 'Delete'}
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))
                         )}
@@ -190,5 +260,35 @@ export default function TranscriptsPage() {
                 </table>
             </div>
         </div>
+    );
+}
+
+function ExtractButton({ state, onExtract }: {
+    state: ExtractionState;
+    onExtract: () => void;
+}) {
+    if (state.status === 'extracting') {
+        return (
+            <span className="px-2.5 py-1 text-[11px] font-medium text-brand-400 opacity-70">
+                Extracting...
+            </span>
+        );
+    }
+
+    if (state.status === 'done') {
+        return (
+            <span className="px-2.5 py-1 text-[11px] font-medium text-emerald-400">
+                {state.count} found
+            </span>
+        );
+    }
+
+    return (
+        <button
+            onClick={onExtract}
+            className="px-2.5 py-1 text-[11px] font-medium text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors"
+        >
+            Extract AI
+        </button>
     );
 }
