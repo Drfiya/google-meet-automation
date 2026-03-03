@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import type { MeetingTranscript, ActionItem } from '@meet-pipeline/shared';
+import { UploadModal } from '../../components/upload-modal';
 
 type SortField = 'meeting_date' | 'meeting_title' | 'word_count';
 type SortDirection = 'asc' | 'desc';
@@ -22,7 +23,7 @@ export default function TranscriptsPage() {
     const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-    useEffect(() => {
+    const refreshTranscripts = () => {
         fetch('/api/transcripts')
             .then((r) => r.json() as Promise<MeetingTranscript[]>)
             .then((data) => {
@@ -30,7 +31,9 @@ export default function TranscriptsPage() {
                 setLoading(false);
             })
             .catch(() => setLoading(false));
-    }, []);
+    };
+
+    useEffect(() => { refreshTranscripts(); }, []);
 
     const handleExtract = async (transcriptId: string) => {
         setExtractionStates((prev) => new Map(prev).set(transcriptId, { status: 'extracting' }));
@@ -143,6 +146,7 @@ export default function TranscriptsPage() {
                     onChange={(e) => setParticipantFilter(e.target.value)}
                     className="input-glow w-64"
                 />
+                <UploadModal onSuccess={() => refreshTranscripts()} />
             </div>
 
             {/* Table */}
@@ -224,8 +228,10 @@ export default function TranscriptsPage() {
                                         {t.word_count.toLocaleString()}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className={`badge text-[10px] ${t.extraction_method === 'inline' ? 'badge-info' :
-                                                t.extraction_method === 'google_doc' ? 'badge-success' : 'badge-warning'
+                                        <span className={`badge text-[10px] ${
+                                                t.extraction_method === 'inline' ? 'badge-info' :
+                                                t.extraction_method === 'google_doc' ? 'badge-success' :
+                                                t.extraction_method === 'upload' ? 'badge-success' : 'badge-warning'
                                             }`}>
                                             {t.extraction_method}
                                         </span>

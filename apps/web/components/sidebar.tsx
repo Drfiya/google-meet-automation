@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './theme-toggle';
+import { SidebarUploadButton } from './upload-modal';
 
 const NAV_ITEMS = [
     { href: '/', label: 'Dashboard', icon: '◆' },
@@ -51,6 +52,11 @@ export function Sidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 px-3 py-4 space-y-1">
+                {/* Quick upload action */}
+                <SidebarUploadButton />
+
+                <div className="my-2 border-t border-theme-border/[0.06]" />
+
                 {NAV_ITEMS.map((item) => {
                     const isActive = item.href === '/'
                         ? pathname === '/'

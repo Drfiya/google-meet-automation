@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { MeetingTranscript, QueryResponse, ActionItem, ActivityLogEntry } from '@meet-pipeline/shared';
+import { UploadModal } from '../components/upload-modal';
 
 /**
  * Dashboard Home — summary stats, recent transcripts, and a query bar.
@@ -16,7 +17,7 @@ export default function DashboardPage() {
     const [actionItems, setActionItems] = useState<ActionItem[]>([]);
     const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
 
-    useEffect(() => {
+    const refreshData = () => {
         fetch('/api/transcripts')
             .then((r) => r.json())
             .then((data: MeetingTranscript[]) => {
@@ -34,7 +35,9 @@ export default function DashboardPage() {
             .then((r) => r.json())
             .then((data) => { if (Array.isArray(data)) setActivity(data); })
             .catch(() => {});
-    }, []);
+    };
+
+    useEffect(() => { refreshData(); }, []);
 
     const handleSearch = async () => {
         if (!query.trim()) return;
@@ -97,9 +100,12 @@ export default function DashboardPage() {
     return (
         <div className="max-w-6xl mx-auto animate-fade-in">
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-theme-text-primary tracking-tight">Dashboard</h1>
-                <p className="text-theme-text-tertiary mt-1">Your meeting transcript overview</p>
+            <div className="mb-8 flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-theme-text-primary tracking-tight">Dashboard</h1>
+                    <p className="text-theme-text-tertiary mt-1">Your meeting transcript overview</p>
+                </div>
+                <UploadModal onSuccess={() => refreshData()} />
             </div>
 
             {/* Query Bar */}
@@ -209,8 +215,10 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-theme-text-tertiary">{t.word_count.toLocaleString()} words</p>
-                                    <span className={`text-[10px] font-medium ${t.extraction_method === 'inline' ? 'text-brand-400' :
-                                            t.extraction_method === 'google_doc' ? 'text-accent-teal' : 'text-accent-violet'
+                                    <span className={`text-[10px] font-medium ${
+                                            t.extraction_method === 'inline' ? 'text-brand-400' :
+                                            t.extraction_method === 'google_doc' ? 'text-accent-teal' :
+                                            t.extraction_method === 'upload' ? 'text-emerald-400' : 'text-accent-violet'
                                         }`}>
                                         {t.extraction_method}
                                     </span>
