@@ -81,3 +81,38 @@ export interface QueryResponse {
     answer: string;
     sources: SourceChunk[];
 }
+
+// ── Action Items ────────────────────────────────
+
+export type ActionItemStatus = 'open' | 'in_progress' | 'done' | 'dismissed';
+export type ActionItemPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type ActionItemCreatedBy = 'ai' | 'manual';
+
+export interface ActionItem {
+    id: string;
+    transcript_id: string | null;
+    title: string;
+    description: string | null;
+    assigned_to: string | null;
+    status: ActionItemStatus;
+    priority: ActionItemPriority;
+    due_date: string | null;
+    source_text: string | null;
+    created_by: ActionItemCreatedBy;
+    created_at: string;
+    updated_at: string;
+    completed_at: string | null;
+}
+
+// ── Activity Log ────────────────────────────────
+
+export interface ActivityLogEntry {
+    id: string;
+    event_type: string;
+    entity_type: string | null;
+    entity_id: string | null;
+    actor: string;
+    summary: string;
+    metadata: Record<string, unknown>;
+    created_at: string;
+}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './theme-toggle';
@@ -7,6 +8,7 @@ import { ThemeToggle } from './theme-toggle';
 const NAV_ITEMS = [
     { href: '/', label: 'Dashboard', icon: '◆' },
     { href: '/transcripts', label: 'Transcripts', icon: '◇' },
+    { href: '/action-items', label: 'Action Items', icon: '☑' },
     { href: '/ask', label: 'Ask AI', icon: '◈' },
     { href: '/logs', label: 'Logs', icon: '◉' },
 ] as const;
@@ -17,6 +19,16 @@ const NAV_ITEMS = [
  */
 export function Sidebar() {
     const pathname = usePathname();
+    const [openCount, setOpenCount] = useState<number | null>(null);
+
+    useEffect(() => {
+        fetch('/api/action-items?status=open,in_progress')
+            .then((r) => r.json())
+            .then((data) => {
+                if (Array.isArray(data)) setOpenCount(data.length);
+            })
+            .catch(() => {});
+    }, []);
 
     return (
         <aside className="fixed left-0 top-0 bottom-0 w-64 bg-theme-raised/80 backdrop-blur-2xl border-r border-theme-border/[0.06] flex flex-col z-50">
@@ -61,7 +73,15 @@ export function Sidebar() {
                                 {item.icon}
                             </span>
                             {item.label}
-                            {isActive && (
+                            {item.href === '/action-items' && openCount !== null && openCount > 0 && (
+                                <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20">
+                                    {openCount}
+                                </span>
+                            )}
+                            {isActive && item.href !== '/action-items' && (
+                                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse-slow" />
+                            )}
+                            {isActive && item.href === '/action-items' && openCount === null && (
                                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse-slow" />
                             )}
                         </Link>

@@ -1,3 +1,5 @@
 export type { MeetingTranscript, TranscriptChunk, ProcessingLogEntry } from './types.js';
 export type { QueryRequest, QueryResponse, SourceChunk } from './types.js';
 export type { ExtractionMethod, LogStatus } from './types.js';
+export type { ActionItem, ActionItemStatus, ActionItemPriority, ActionItemCreatedBy } from './types.js';
+export type { ActivityLogEntry } from './types.js';
