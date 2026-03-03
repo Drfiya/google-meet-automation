@@ -8,6 +8,7 @@ import { SidebarUploadButton } from './upload-modal';
 
 const NAV_ITEMS = [
     { href: '/', label: 'Dashboard', icon: '◆' },
+    { href: '/calendar', label: 'Calendar', icon: '◫' },
     { href: '/transcripts', label: 'Transcripts', icon: '◇' },
     { href: '/action-items', label: 'Action Items', icon: '☑' },
     { href: '/ask', label: 'Ask AI', icon: '◈' },
@@ -28,7 +29,7 @@ export function Sidebar() {
             .then((data) => {
                 if (Array.isArray(data)) setOpenCount(data.length);
             })
-            .catch(() => {});
+            .catch(() => { });
     }, []);
 
     return (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import type { MeetingTranscript, QueryResponse, ActionItem, ActivityLogEntry } from '@meet-pipeline/shared';
+import type { MeetingTranscript, QueryResponse, ActionItem, ActivityLogEntry, ScoreboardMetrics } from '@meet-pipeline/shared';
 import { UploadModal } from '../components/upload-modal';
 
 /**
@@ -16,6 +16,7 @@ export default function DashboardPage() {
     const [querying, setQuerying] = useState(false);
     const [actionItems, setActionItems] = useState<ActionItem[]>([]);
     const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
+    const [calendarScoreboard, setCalendarScoreboard] = useState<ScoreboardMetrics | null>(null);
 
     const refreshData = () => {
         fetch('/api/transcripts')
@@ -29,12 +30,20 @@ export default function DashboardPage() {
         fetch('/api/action-items')
             .then((r) => r.json())
             .then((data) => { if (Array.isArray(data)) setActionItems(data); })
-            .catch(() => {});
+            .catch(() => { });
 
         fetch('/api/activity?limit=10')
             .then((r) => r.json())
             .then((data) => { if (Array.isArray(data)) setActivity(data); })
-            .catch(() => {});
+            .catch(() => { });
+
+        fetch('/api/calendar')
+            .then((r) => r.json())
+            .then((data) => {
+                const resp = data as { scoreboard?: ScoreboardMetrics };
+                if (resp?.scoreboard) setCalendarScoreboard(resp.scoreboard);
+            })
+            .catch(() => { });
     };
 
     useEffect(() => { refreshData(); }, []);
@@ -162,6 +171,9 @@ export default function DashboardPage() {
                 <StatCard label="This Month" value={thisMonth} color="from-accent-violet to-purple-500" loading={loading} />
             </div>
 
+            {/* This Month at a Glance */}
+            <CalendarWidget scoreboard={calendarScoreboard} />
+
             {/* Open Action Items Summary */}
             {openItems.length > 0 && (
                 <ActionItemsSummary
@@ -215,9 +227,8 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-theme-text-tertiary">{t.word_count.toLocaleString()} words</p>
-                                    <span className={`text-[10px] font-medium ${
-                                            t.extraction_method === 'inline' ? 'text-brand-400' :
-                                            t.extraction_method === 'google_doc' ? 'text-accent-teal' :
+                                    <span className={`text-[10px] font-medium ${t.extraction_method === 'inline' ? 'text-brand-400' :
+                                        t.extraction_method === 'google_doc' ? 'text-accent-teal' :
                                             t.extraction_method === 'upload' ? 'text-emerald-400' : 'text-accent-violet'
                                         }`}>
                                         {t.extraction_method}
@@ -240,11 +251,10 @@ export default function DashboardPage() {
                     <div className="divide-y divide-theme-border/[0.04]">
                         {activity.map((entry) => (
                             <div key={entry.id} className="px-6 py-3 flex items-start gap-3">
-                                <span className={`mt-1 inline-block w-2 h-2 rounded-full flex-shrink-0 ${
-                                    entry.event_type.includes('created') ? 'bg-emerald-500' :
+                                <span className={`mt-1 inline-block w-2 h-2 rounded-full flex-shrink-0 ${entry.event_type.includes('created') ? 'bg-emerald-500' :
                                     entry.event_type.includes('updated') ? 'bg-brand-400' :
-                                    entry.event_type.includes('processed') ? 'bg-accent-teal' : 'bg-theme-text-muted'
-                                }`} />
+                                        entry.event_type.includes('processed') ? 'bg-accent-teal' : 'bg-theme-text-muted'
+                                    }`} />
                                 <div className="min-w-0 flex-1">
                                     <p className="text-sm text-theme-text-primary">{entry.summary}</p>
                                     <p className="text-xs text-theme-text-muted mt-0.5">
@@ -328,9 +338,8 @@ function ActionItemsSummary({ openItems, onStatusChange }: {
                 <div className="space-y-2">
                     {urgentItems.map((item) => (
                         <div key={item.id} className="flex items-center gap-2">
-                            <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${
-                                item.priority === 'urgent' ? 'bg-rose-500' : 'bg-amber-500'
-                            }`} />
+                            <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${item.priority === 'urgent' ? 'bg-rose-500' : 'bg-amber-500'
+                                }`} />
                             <p className="text-sm text-theme-text-primary truncate flex-1">{item.title}</p>
                             {item.assigned_to && (
                                 <span className="text-xs text-theme-text-tertiary flex-shrink-0">{item.assigned_to}</span>
@@ -345,6 +354,34 @@ function ActionItemsSummary({ openItems, onStatusChange }: {
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
+
+function CalendarWidget({ scoreboard }: { scoreboard: ScoreboardMetrics | null }) {
+    if (!scoreboard) return null;
+
+    return (
+        <div className="glass-card p-5 mb-8">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-sm font-semibold text-theme-text-secondary uppercase tracking-wider mb-2">
+                        This Month at a Glance
+                    </h2>
+                    <p className="text-sm text-theme-text-primary">
+                        <span className="font-semibold text-brand-400">{scoreboard.totalMeetings}</span> meetings
+                        {' · ~'}<span className="font-semibold text-accent-teal">{scoreboard.totalHours.toFixed(1)}h</span> total
+                        {' · '}<span className="font-semibold text-accent-violet">{scoreboard.topicsDiscussed.length}</span> topics
+                        {' · '}<span className="font-semibold text-emerald-400">{scoreboard.actionItemCompletionRate}%</span> completion
+                    </p>
+                </div>
+                <Link
+                    href="/calendar"
+                    className="text-xs text-brand-400 hover:text-brand-300 transition-colors font-medium whitespace-nowrap ml-4"
+                >
+                    View Calendar →
+                </Link>
+            </div>
         </div>
     );
 }

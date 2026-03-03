@@ -117,3 +117,45 @@ export interface ActivityLogEntry {
     metadata: Record<string, unknown>;
     created_at: string;
 }
+
+// ── Calendar & Scoreboard ────────────────────────
+
+/** Aggregated stats for a single calendar day. */
+export interface DayMeetingSummary {
+    date: string;                  // YYYY-MM-DD
+    meetings: {
+        transcript_id: string;
+        title: string;
+        participants: string[];
+        word_count: number;
+        extraction_method: string;
+    }[];
+    totalMeetings: number;
+    totalWords: number;
+    uniqueParticipants: string[];
+}
+
+/** Monthly/weekly aggregated scoreboard metrics. */
+export interface ScoreboardMetrics {
+    period: string;                // e.g. "2025-01" or "2025-W03"
+    totalMeetings: number;
+    totalHours: number;            // estimated from word count (avg ~150 wpm speech)
+    totalActionItems: number;
+    completedActionItems: number;
+    topicsDiscussed: string[];     // unique group_labels from action items
+    meetingsByParticipant: Record<string, number>;
+    busiestDay: string;            // day of week
+    averageMeetingsPerWeek: number;
+    actionItemCompletionRate: number; // 0-100
+    streakDays: number;            // consecutive days with at least 1 meeting
+    // Co-founder pair analysis
+    meetingsTogether: number;
+    lutfiyaSolo: number;
+    chrisSolo: number;
+    withExternalGuests: number;
+    // Action Item velocity
+    actionItemsCreated: number;
+    actionItemsCompleted: number;
+    // No-meeting weekdays
+    freeDays: number;
+}

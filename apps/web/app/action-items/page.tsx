@@ -206,7 +206,7 @@ export default function ActionItemsPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ force: true }),
             });
-            const result = await res.json();
+            const result = await res.json() as { error?: string; updated?: number };
 
             if (!res.ok) {
                 setGroupError(result.error || 'Grouping failed');
@@ -704,8 +704,8 @@ function ActionItemCard({
                         <button
                             onClick={() => setShowAskAI((v) => !v)}
                             className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors ${showAskAI
-                                    ? 'bg-accent-violet/20 text-accent-violet'
-                                    : 'bg-accent-violet/10 text-accent-violet hover:bg-accent-violet/20'
+                                ? 'bg-accent-violet/20 text-accent-violet'
+                                : 'bg-accent-violet/10 text-accent-violet hover:bg-accent-violet/20'
                                 }`}
                         >
                             ◈ Ask AI
@@ -741,8 +741,8 @@ function ActionItemCard({
                                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                         <div
                                             className={`max-w-[85%] px-3 py-1.5 text-xs whitespace-pre-wrap ${msg.role === 'user'
-                                                    ? 'bg-brand-500/15 text-theme-text-primary rounded-xl rounded-br-sm'
-                                                    : 'glass-card text-theme-text-primary rounded-xl rounded-bl-sm'
+                                                ? 'bg-brand-500/15 text-theme-text-primary rounded-xl rounded-br-sm'
+                                                : 'glass-card text-theme-text-primary rounded-xl rounded-bl-sm'
                                                 }`}
                                         >
                                             {msg.content}
