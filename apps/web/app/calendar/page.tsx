@@ -107,7 +107,7 @@ export default function CalendarPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="stat-card">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-theme-muted/40 opacity-80" />
+                            {/* Accent bar from CSS ::before */}
                             <p className="text-xs text-theme-text-tertiary font-medium uppercase tracking-wider">—</p>
                             <p className="text-3xl font-bold text-theme-text-primary mt-2">—</p>
                         </div>
@@ -129,7 +129,7 @@ export default function CalendarPage() {
                 <button
                     onClick={handlePrev}
                     className="px-4 py-2 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary
-                               bg-theme-raised/60 hover:bg-theme-raised/80 rounded-xl border border-theme-border/[0.06]
+                               bg-theme-raised hover:bg-theme-overlay rounded-xl border border-theme-border
                                transition-all duration-200"
                 >
                     ← Prev
@@ -140,7 +140,7 @@ export default function CalendarPage() {
                 <button
                     onClick={handleNext}
                     className="px-4 py-2 text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary
-                               bg-theme-raised/60 hover:bg-theme-raised/80 rounded-xl border border-theme-border/[0.06]
+                               bg-theme-raised hover:bg-theme-overlay rounded-xl border border-theme-border
                                transition-all duration-200"
                 >
                     Next →
@@ -177,7 +177,7 @@ export default function CalendarPage() {
                                     relative p-2 rounded-xl text-left min-h-[80px] transition-all duration-200 border
                                     ${!inMonth ? 'opacity-30 pointer-events-none' : ''}
                                     ${today ? 'ring-2 ring-brand-500/40' : ''}
-                                    ${isSelected ? 'bg-brand-500/10 border-brand-500/20' : 'border-transparent hover:bg-theme-border/[0.04]'}
+                                    ${isSelected ? 'bg-brand-500/10 border-brand-500/20' : 'border-transparent hover:bg-theme-overlay'}
                                     ${weekend && inMonth ? 'bg-theme-muted/10' : ''}
                                     ${meetingCount > 0 ? 'cursor-pointer' : 'cursor-default'}
                                 `}
@@ -246,7 +246,7 @@ function ScoreboardHeader({ scoreboard }: { scoreboard: ScoreboardMetrics }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
             {cards.map((card) => (
                 <div key={card.label} className="stat-card">
-                    <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${card.color} opacity-80`} />
+                    {/* Accent bar from CSS ::before */}
                     <p className="text-xs text-theme-text-tertiary font-medium uppercase tracking-wider">{card.label}</p>
                     <p className="text-3xl font-bold text-theme-text-primary mt-2">{card.value}</p>
                 </div>
@@ -358,7 +358,7 @@ function CollaborationInsights({ scoreboard }: { scoreboard: ScoreboardMetrics }
                                 <span className="text-xs text-theme-text-secondary w-28 truncate flex-shrink-0">{name as string}</span>
                                 <div className="flex-1 h-5 bg-theme-muted/20 rounded-full overflow-hidden">
                                     <div
-                                        className="h-full bg-gradient-to-r from-brand-500 to-brand-400 rounded-full transition-all duration-500"
+                                        className="h-full bg-brand-500 rounded-full transition-all duration-500"
                                         style={{ width: `${((count as number) / maxCount) * 100}%` }}
                                     />
                                 </div>
@@ -429,13 +429,13 @@ function CoFounderFeatures({
                     <div className="space-y-1.5">
                         <div className="h-3 bg-theme-muted/20 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
+                                className="h-full bg-amber-500 rounded-full transition-all duration-500"
                                 style={{ width: `${(scoreboard.actionItemsCreated / velocityMax) * 100}%` }}
                             />
                         </div>
                         <div className="h-3 bg-theme-muted/20 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
+                                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                                 style={{ width: `${(scoreboard.actionItemsCompleted / velocityMax) * 100}%` }}
                             />
                         </div>
@@ -451,7 +451,7 @@ function CoFounderFeatures({
                 </div>
 
                 {/* Timezone */}
-                <div className="pt-3 border-t border-theme-border/[0.06]">
+                <div className="pt-3 border-t border-theme-border">
                     <p className="text-[11px] text-theme-text-muted">
                         📍 Viewing in your local timezone — <span className="font-medium text-theme-text-tertiary">{timezone}</span>
                     </p>
@@ -523,7 +523,7 @@ function AllTimeTotals({ cumulative }: { cumulative: CumulativeStats }) {
             </div>
 
             {/* Footer */}
-            <p className="text-xs text-theme-text-muted mt-3 pt-3 border-t border-theme-border/[0.06]">
+            <p className="text-xs text-theme-text-muted mt-3 pt-3 border-t border-theme-border">
                 Avg: <span className="font-medium text-theme-text-tertiary">{cumulative.averageMeetingsPerMonth.toFixed(1)}</span> meetings/month
                 {' · '}<span className="font-medium text-theme-text-tertiary">{cumulative.totalMonthsActive}</span> active month{cumulative.totalMonthsActive !== 1 ? 's' : ''}
             </p>

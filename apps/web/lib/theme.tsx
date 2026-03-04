@@ -11,7 +11,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const STORAGE_KEY = 'meetscript-theme';
+const STORAGE_KEY = 'scienceexperts-theme';
 
 function getInitialTheme(): Theme {
     if (typeof window === 'undefined') return 'dark';

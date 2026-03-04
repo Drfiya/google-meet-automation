@@ -13,9 +13,9 @@ export function ThemeToggle() {
         <button
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-medium
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-full text-sm font-medium
                        text-theme-text-secondary hover:text-theme-text-primary
-                       hover:bg-theme-overlay/60 transition-all duration-200"
+                       hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200"
         >
             {theme === 'dark' ? (
                 <SunIcon className="w-4 h-4" />

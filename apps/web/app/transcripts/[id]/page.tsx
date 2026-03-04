@@ -43,7 +43,7 @@ export default function TranscriptDetailPage({
         fetch(`/api/action-items?transcript_id=${params.id}`)
             .then((r) => r.json())
             .then((data) => { if (Array.isArray(data)) setActionItems(data); })
-            .catch(() => {});
+            .catch(() => { });
     }, [params.id]);
 
     const handleAsk = async () => {
@@ -144,7 +144,7 @@ export default function TranscriptDetailPage({
                             </button>
                         </div>
                         {answer && (
-                            <div className="mt-4 pt-4 border-t border-theme-border/[0.06]">
+                            <div className="mt-4 pt-4 border-t border-theme-border">
                                 <p className="text-sm text-theme-text-primary whitespace-pre-wrap">{answer.answer}</p>
                             </div>
                         )}
@@ -189,7 +189,7 @@ export default function TranscriptDetailPage({
                         <MetaField label="Word Count" value={transcript.word_count.toLocaleString()} />
                         <MetaField label="Extraction Method">
                             <span className={`badge text-xs ${transcript.extraction_method === 'inline' ? 'badge-info' :
-                                    transcript.extraction_method === 'google_doc' ? 'badge-success' : 'badge-warning'
+                                transcript.extraction_method === 'google_doc' ? 'badge-success' : 'badge-warning'
                                 }`}>
                                 {transcript.extraction_method}
                             </span>
@@ -234,26 +234,23 @@ export default function TranscriptDetailPage({
                             <div className="space-y-2">
                                 {actionItems.filter((i) => i.status !== 'dismissed').map((item) => (
                                     <div key={item.id} className="flex items-start gap-2">
-                                        <span className={`mt-1 inline-block w-2 h-2 rounded-full flex-shrink-0 ${
-                                            item.priority === 'urgent' ? 'bg-rose-500' :
-                                            item.priority === 'high' ? 'bg-amber-500' :
-                                            item.priority === 'medium' ? 'bg-brand-400' : 'bg-theme-text-muted'
-                                        }`} />
+                                        <span className={`mt-1 inline-block w-2 h-2 rounded-full flex-shrink-0 ${item.priority === 'urgent' ? 'bg-rose-500' :
+                                                item.priority === 'high' ? 'bg-amber-500' :
+                                                    item.priority === 'medium' ? 'bg-brand-400' : 'bg-theme-text-muted'
+                                            }`} />
                                         <div className="min-w-0 flex-1">
-                                            <p className={`text-xs font-medium ${
-                                                item.status === 'done' ? 'text-theme-text-muted line-through' : 'text-theme-text-primary'
-                                            }`}>
+                                            <p className={`text-xs font-medium ${item.status === 'done' ? 'text-theme-text-muted line-through' : 'text-theme-text-primary'
+                                                }`}>
                                                 {item.title}
                                             </p>
                                             <div className="flex items-center gap-1.5 mt-0.5">
                                                 {item.assigned_to && (
                                                     <span className="text-[10px] text-theme-text-tertiary">{item.assigned_to}</span>
                                                 )}
-                                                <span className={`text-[10px] font-medium ${
-                                                    item.status === 'done' ? 'text-emerald-400' :
-                                                    item.status === 'in_progress' ? 'text-brand-400' :
-                                                    'text-theme-text-muted'
-                                                }`}>
+                                                <span className={`text-[10px] font-medium ${item.status === 'done' ? 'text-emerald-400' :
+                                                        item.status === 'in_progress' ? 'text-brand-400' :
+                                                            'text-theme-text-muted'
+                                                    }`}>
                                                     {item.status.replace('_', ' ')}
                                                 </span>
                                             </div>

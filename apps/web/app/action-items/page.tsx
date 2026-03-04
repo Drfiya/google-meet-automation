@@ -259,17 +259,13 @@ export default function ActionItemsPage() {
                     <button
                         onClick={handleSmartGroup}
                         disabled={grouping}
-                        className="px-5 py-2.5 bg-gradient-to-r from-accent-violet to-purple-600 text-white rounded-xl font-medium text-sm
-                           hover:from-accent-violet/90 hover:to-purple-500 transition-all duration-200
-                           shadow-lg shadow-accent-violet/20 hover:shadow-accent-violet/30 disabled:opacity-50"
+                        className="btn-primary px-5 py-2.5"
                     >
                         {grouping ? 'Grouping...' : '\u2726 Smart Group'}
                     </button>
                     <button
                         onClick={() => setShowCreate(true)}
-                        className="px-5 py-2.5 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl font-medium text-sm
-                           hover:from-brand-400 hover:to-brand-500 transition-all duration-200
-                           shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30"
+                        className="btn-primary px-5 py-2.5"
                     >
                         + Add Item
                     </button>
@@ -315,7 +311,7 @@ export default function ActionItemsPage() {
                     ]}
                 />
                 {/* View mode toggle */}
-                <div className="flex items-center gap-1 bg-theme-bg-overlay/50 rounded-lg p-0.5">
+                <div className="flex items-center gap-1 bg-theme-overlay rounded-lg p-0.5">
                     <button
                         onClick={() => setViewMode('grouped')}
                         className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${viewMode === 'grouped'
@@ -366,7 +362,7 @@ export default function ActionItemsPage() {
                                 {/* Section Header */}
                                 <div className="glass-card p-4 mb-3 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${col.color}`} />
+                                        <div className={`w-2 h-2 rounded-full ${col.key === 'open' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                                         <h3 className="text-sm font-semibold text-theme-text-primary">{col.label}</h3>
                                     </div>
                                     <span className="text-xs text-theme-text-tertiary font-medium">{colItems.length}</span>
@@ -374,7 +370,7 @@ export default function ActionItemsPage() {
 
                                 {/* Cards — responsive grid */}
                                 {colItems.length === 0 ? (
-                                    <div className="p-6 text-center text-xs text-theme-text-muted border border-dashed border-theme-border/[0.08] rounded-2xl">
+                                    <div className="p-6 text-center text-xs text-theme-text-muted border border-dashed border-theme-border rounded-2xl">
                                         No items
                                     </div>
                                 ) : viewMode === 'flat' ? (
@@ -407,7 +403,7 @@ export default function ActionItemsPage() {
                                                         <button
                                                             onClick={() => toggleGroup(groupKey)}
                                                             className="w-full flex items-center justify-between px-4 py-2.5
-                                                                bg-theme-bg-overlay/50 hover:bg-theme-bg-overlay/70
+                                                                bg-theme-overlay hover:bg-theme-muted
                                                                 transition-colors cursor-pointer"
                                                         >
                                                             <div className="flex items-center gap-2">
@@ -449,7 +445,7 @@ export default function ActionItemsPage() {
                                                     <button
                                                         onClick={() => toggleGroup(groupKey)}
                                                         className="w-full flex items-center justify-between px-4 py-2.5
-                                                            bg-theme-bg-overlay/50 hover:bg-theme-bg-overlay/70
+                                                            bg-theme-overlay hover:bg-theme-muted
                                                             transition-colors cursor-pointer"
                                                     >
                                                         <div className="flex items-center gap-2">
@@ -494,7 +490,7 @@ export default function ActionItemsPage() {
 
             {/* Create Modal */}
             {showCreate && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                     <div className="glass-card p-6 w-full max-w-lg mx-4 animate-slide-up">
                         <h2 className="text-lg font-semibold text-theme-text-primary mb-4">New Action Item</h2>
                         <div className="space-y-4">
@@ -564,9 +560,7 @@ export default function ActionItemsPage() {
                             <button
                                 onClick={handleCreate}
                                 disabled={!newTitle.trim()}
-                                className="px-5 py-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl text-sm font-medium
-                                   hover:from-brand-400 hover:to-brand-500 transition-all duration-200 disabled:opacity-50
-                                   shadow-lg shadow-brand-500/20"
+                                className="btn-primary px-5 py-2"
                             >
                                 Create
                             </button>
@@ -688,7 +682,7 @@ function ActionItemCard({
 
             {/* Expanded Detail */}
             {isExpanded && (
-                <div className="mt-3 pt-3 border-t border-theme-border/[0.06] space-y-3 animate-slide-up">
+                <div className="mt-3 pt-3 border-t border-theme-border space-y-3 animate-slide-up">
                     {item.description && (
                         <p className="text-xs text-theme-text-secondary">{item.description}</p>
                     )}
@@ -714,7 +708,7 @@ function ActionItemCard({
 
                     {/* Inline mini-chat panel */}
                     {showAskAI && item.transcript_id && (
-                        <div className="mt-3 p-3 rounded-xl bg-theme-overlay/40 border border-theme-border/[0.06]">
+                        <div className="mt-3 p-3 rounded-xl bg-theme-overlay border border-theme-border">
                             {/* Messages area */}
                             <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-2 mb-3">
                                 {aiMessages.length === 0 && !aiLoading && (
@@ -779,9 +773,7 @@ function ActionItemCard({
                                 <button
                                     onClick={() => handleAskAI()}
                                     disabled={aiLoading || !aiQuestion.trim()}
-                                    className="px-3 py-1.5 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-lg
-                                               text-xs font-medium hover:from-brand-400 hover:to-brand-500 transition-all
-                                               duration-200 disabled:opacity-50 shadow-sm shadow-brand-500/20"
+                                    className="btn-primary px-3 py-1.5 text-xs"
                                 >
                                     Send
                                 </button>
@@ -808,7 +800,7 @@ function ActionItemCard({
                             onBlur={() => onGroupLabelSave(item.id, editGroupLabel)}
                             onKeyDown={(e) => e.key === 'Enter' && onGroupLabelSave(item.id, editGroupLabel)}
                             placeholder="Ungrouped"
-                            className="text-xs text-theme-text-secondary bg-transparent border-b border-theme-border/[0.1]
+                            className="text-xs text-theme-text-secondary bg-transparent border-b border-theme-border
                                        focus:border-brand-500/50 focus:outline-none px-1 py-0.5 w-32 transition-colors"
                         />
                     </div>
@@ -816,7 +808,7 @@ function ActionItemCard({
             )}
 
             {/* Actions */}
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-theme-border/[0.06]">
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-theme-border">
                 {(transitions[item.status] ?? []).map((t) => (
                     <button
                         key={t.target}

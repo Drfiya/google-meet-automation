@@ -31,7 +31,7 @@ export default function LogsPage() {
             <div className="glass-card overflow-hidden">
                 <table className="w-full">
                     <thead>
-                        <tr className="border-b border-theme-border/[0.06]">
+                        <tr className="border-b border-theme-border">
                             <th className="text-left px-6 py-3 text-xs font-semibold text-theme-text-tertiary uppercase tracking-wider">
                                 Timestamp
                             </th>
@@ -73,7 +73,7 @@ export default function LogsPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`${log.status === 'success' ? 'badge-success' :
-                                                log.status === 'skipped' ? 'badge-warning' : 'badge-error'
+                                            log.status === 'skipped' ? 'badge-warning' : 'badge-error'
                                             }`}>
                                             {log.status}
                                         </span>

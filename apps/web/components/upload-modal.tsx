@@ -148,9 +148,7 @@ export function UploadModal({ onSuccess }: UploadModalProps) {
         return (
             <button
                 onClick={openModal}
-                className="px-4 py-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl text-sm font-medium
-                           hover:from-brand-400 hover:to-brand-500 transition-all duration-200
-                           shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30"
+                className="btn-primary px-4 py-2"
             >
                 Upload Transcript
             </button>
@@ -159,7 +157,7 @@ export function UploadModal({ onSuccess }: UploadModalProps) {
 
     return (
         <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
             <div
@@ -218,7 +216,7 @@ export function UploadModal({ onSuccess }: UploadModalProps) {
                                 transition-all duration-200 mb-4
                                 ${dragOver
                                     ? 'border-brand-500 bg-brand-500/5'
-                                    : 'border-theme-border/[0.15] hover:border-theme-border/[0.3]'
+                                    : 'border-theme-border hover:border-theme-border'
                                 }
                             `}
                         >
@@ -303,9 +301,7 @@ export function UploadModal({ onSuccess }: UploadModalProps) {
                             <button
                                 onClick={handleUpload}
                                 disabled={!file || uploading}
-                                className="px-5 py-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl text-sm font-medium
-                                           hover:from-brand-400 hover:to-brand-500 transition-all duration-200 disabled:opacity-50
-                                           shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30"
+                                className="btn-primary px-5 py-2"
                             >
                                 {uploading ? 'Processing...' : 'Upload & Process'}
                             </button>
@@ -341,7 +337,7 @@ export function SidebarUploadButton({ onSuccess }: UploadModalProps) {
             <button
                 onClick={() => setIsOpen(true)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full
-                           text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-border/[0.04]
+                           text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-muted
                            transition-all duration-200 group"
                 title="Upload Transcript"
             >
@@ -461,7 +457,7 @@ function UploadModalPortal({
 
     return (
         <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             onClick={(e) => { if (e.target === e.currentTarget && !uploading) onClose(); }}
         >
             <div
@@ -517,7 +513,7 @@ function UploadModalPortal({
                                 transition-all duration-200 mb-4
                                 ${dragOver
                                     ? 'border-brand-500 bg-brand-500/5'
-                                    : 'border-theme-border/[0.15] hover:border-theme-border/[0.3]'
+                                    : 'border-theme-border hover:border-theme-border'
                                 }
                             `}
                         >
@@ -595,9 +591,7 @@ function UploadModalPortal({
                             <button
                                 onClick={handleUpload}
                                 disabled={!file || uploading}
-                                className="px-5 py-2 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl text-sm font-medium
-                                           hover:from-brand-400 hover:to-brand-500 transition-all duration-200 disabled:opacity-50
-                                           shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30"
+                                className="btn-primary px-5 py-2"
                             >
                                 {uploading ? 'Processing...' : 'Upload & Process'}
                             </button>

@@ -153,7 +153,7 @@ export default function TranscriptsPage() {
             <div className="glass-card overflow-hidden">
                 <table className="w-full">
                     <thead>
-                        <tr className="border-b border-theme-border/[0.06]">
+                        <tr className="border-b border-theme-border">
                             <th
                                 onClick={() => toggleSort('meeting_title')}
                                 className="text-left px-6 py-3 text-xs font-semibold text-theme-text-tertiary uppercase tracking-wider cursor-pointer hover:text-theme-text-primary transition-colors"
@@ -228,10 +228,9 @@ export default function TranscriptsPage() {
                                         {t.word_count.toLocaleString()}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className={`badge text-[10px] ${
-                                                t.extraction_method === 'inline' ? 'badge-info' :
+                                        <span className={`badge text-[10px] ${t.extraction_method === 'inline' ? 'badge-info' :
                                                 t.extraction_method === 'google_doc' ? 'badge-success' :
-                                                t.extraction_method === 'upload' ? 'badge-success' : 'badge-warning'
+                                                    t.extraction_method === 'upload' ? 'badge-success' : 'badge-warning'
                                             }`}>
                                             {t.extraction_method}
                                         </span>
@@ -245,11 +244,10 @@ export default function TranscriptsPage() {
                                             <button
                                                 onClick={() => handleDelete(t.transcript_id)}
                                                 disabled={deletingIds.has(t.transcript_id)}
-                                                className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors disabled:opacity-50 ${
-                                                    confirmDeleteId === t.transcript_id
+                                                className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors disabled:opacity-50 ${confirmDeleteId === t.transcript_id
                                                         ? 'bg-rose-500/20 text-rose-400 ring-1 ring-rose-500/30'
                                                         : 'text-theme-text-muted hover:text-rose-400 hover:bg-rose-500/10'
-                                                }`}
+                                                    }`}
                                             >
                                                 {deletingIds.has(t.transcript_id)
                                                     ? '...'

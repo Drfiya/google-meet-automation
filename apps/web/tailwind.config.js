@@ -8,49 +8,51 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                // Custom brand palette — deep blues with teal accents
+                // ScienceExperts.ai brand palette — red/coral accent
                 brand: {
-                    50: '#eef7ff',
-                    100: '#d9edff',
-                    200: '#bce0ff',
-                    300: '#8eccff',
-                    400: '#59afff',
-                    500: '#338bff',
-                    600: '#1b6af5',
-                    700: '#1454e1',
-                    800: '#1745b6',
-                    900: '#193d8f',
-                    950: '#142757',
+                    50: '#fef2f2',
+                    100: '#fee2e2',
+                    200: '#fecaca',
+                    300: '#fca5a5',
+                    400: '#e05a5a',
+                    500: '#D94A4A',   // PRIMARY ACCENT — CTA buttons, active states
+                    600: '#C43E3E',   // Hover state
+                    700: '#b91c1c',
+                    800: '#991b1b',
+                    900: '#7f1d1d',
+                    950: '#450a0a',
                 },
                 surface: {
-                    DEFAULT: '#0a0f1e',
-                    raised: '#111827',
-                    overlay: '#1a2236',
-                    muted: '#1e293b',
+                    DEFAULT: '#121212',
+                    raised: '#2a2a2a',
+                    overlay: '#202020',
+                    muted: '#323232',
                 },
                 accent: {
-                    teal: '#2dd4bf',
+                    teal: '#06b6d4',
                     violet: '#8b5cf6',
                     amber: '#f59e0b',
-                    rose: '#f43f5e',
+                    rose: '#ef4444',
+                    emerald: '#22c55e',
+                    blue: '#3b82f6',
                 },
                 // Semantic theme tokens backed by CSS variables
                 theme: {
-                    base: 'rgb(var(--color-bg-base) / <alpha-value>)',
-                    raised: 'rgb(var(--color-bg-raised) / <alpha-value>)',
-                    overlay: 'rgb(var(--color-bg-overlay) / <alpha-value>)',
-                    muted: 'rgb(var(--color-bg-muted) / <alpha-value>)',
+                    base: 'rgb(var(--color-background) / <alpha-value>)',
+                    raised: 'rgb(var(--color-card) / <alpha-value>)',
+                    overlay: 'rgb(var(--color-muted) / <alpha-value>)',
+                    muted: 'rgb(var(--color-muted) / <alpha-value>)',
                 },
                 'theme-text': {
-                    primary: 'rgb(var(--color-text-primary) / <alpha-value>)',
-                    secondary: 'rgb(var(--color-text-secondary) / <alpha-value>)',
-                    tertiary: 'rgb(var(--color-text-tertiary) / <alpha-value>)',
-                    muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
+                    primary: 'rgb(var(--color-foreground) / <alpha-value>)',
+                    secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
+                    tertiary: 'rgb(var(--color-secondary) / <alpha-value>)',
+                    muted: 'rgb(var(--color-muted-foreground) / <alpha-value>)',
                 },
                 'theme-border': 'rgb(var(--color-border) / <alpha-value>)',
             },
             fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif'],
+                sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
                 mono: ['JetBrains Mono', 'monospace'],
             },
             animation: {

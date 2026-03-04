@@ -18,6 +18,7 @@ export default function DashboardPage() {
     const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
     const [calendarScoreboard, setCalendarScoreboard] = useState<ScoreboardMetrics | null>(null);
     const [calendarCumulative, setCalendarCumulative] = useState<CumulativeStats | null>(null);
+    const [transcriptsOpen, setTranscriptsOpen] = useState(true);
 
     const refreshData = () => {
         fetch('/api/transcripts')
@@ -134,9 +135,7 @@ export default function DashboardPage() {
                         id="dashboard-search-btn"
                         onClick={handleSearch}
                         disabled={querying}
-                        className="px-6 py-3 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl font-medium text-sm
-                       hover:from-brand-400 hover:to-brand-500 transition-all duration-200 disabled:opacity-50
-                       shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30"
+                        className="btn-primary px-6 py-3"
                     >
                         {querying ? 'Searching...' : 'Ask AI'}
                     </button>
@@ -146,7 +145,7 @@ export default function DashboardPage() {
                     <div className="glass-card p-6 mt-4 animate-slide-up">
                         <p className="text-theme-text-primary whitespace-pre-wrap">{answer.answer}</p>
                         {answer.sources.length > 0 && (
-                            <div className="mt-4 pt-4 border-t border-theme-border/[0.06]">
+                            <div className="mt-4 pt-4 border-t border-theme-border">
                                 <p className="text-xs text-theme-text-tertiary mb-2">Sources ({answer.sources.length})</p>
                                 <div className="space-y-2">
                                     {answer.sources.map((s) => (
@@ -199,57 +198,74 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* Recent Transcripts */}
+            {/* Recent Transcripts — collapsible */}
             <div className="glass-card overflow-hidden">
-                <div className="p-6 border-b border-theme-border/[0.06]">
+                <button
+                    onClick={() => setTranscriptsOpen((v) => !v)}
+                    className="w-full flex items-center justify-between px-8 py-5 border-b border-theme-border
+                               hover:bg-theme-muted transition-colors cursor-pointer"
+                >
                     <h2 className="text-sm font-semibold text-theme-text-secondary uppercase tracking-wider">
                         Recent Transcripts
+                        {!loading && <span className="ml-2 text-theme-text-muted font-normal normal-case tracking-normal">({recent.length})</span>}
                     </h2>
-                </div>
-                {loading ? (
-                    <div className="p-12 text-center text-theme-text-tertiary">Loading...</div>
-                ) : recent.length === 0 ? (
-                    <div className="p-12 text-center text-theme-text-tertiary">
-                        No transcripts yet. Processed emails will appear here.
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto divide-y divide-theme-border/[0.04]">
-                        {recent.map((t) => (
-                            <Link
-                                key={t.transcript_id}
-                                href={`/transcripts/${t.transcript_id}`}
-                                className="table-row flex items-center justify-between px-6 py-4"
-                            >
-                                <div className="min-w-0 flex-1 mr-4">
-                                    <p className="text-sm font-medium text-theme-text-primary truncate max-w-xs sm:max-w-sm md:max-w-md">{t.meeting_title}</p>
-                                    <p className="text-xs text-theme-text-tertiary mt-0.5">
-                                        {new Date(t.meeting_date).toLocaleDateString()} · {t.participants.length} participants
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-xs text-theme-text-tertiary">{t.word_count.toLocaleString()} words</p>
-                                    <span className={`text-[10px] font-medium ${t.extraction_method === 'inline' ? 'text-brand-400' :
-                                        t.extraction_method === 'google_doc' ? 'text-accent-teal' :
-                                            t.extraction_method === 'upload' ? 'text-emerald-400' : 'text-accent-violet'
-                                        }`}>
-                                        {t.extraction_method}
-                                    </span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                    <span
+                        className="text-xs text-theme-text-muted transition-transform duration-200"
+                        style={{ display: 'inline-block', transform: transcriptsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                    >
+                        &#9654;
+                    </span>
+                </button>
+                {transcriptsOpen && (
+                    <>
+                        {loading ? (
+                            <div className="px-8 py-12 text-center text-theme-text-tertiary">Loading...</div>
+                        ) : recent.length === 0 ? (
+                            <div className="px-8 py-12 text-center text-theme-text-tertiary">
+                                No transcripts yet. Processed emails will appear here.
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-theme-border">
+                                {recent.map((t) => (
+                                    <Link
+                                        key={t.transcript_id}
+                                        href={`/transcripts/${t.transcript_id}`}
+                                        className="block flex items-center justify-between px-8 py-4
+                                                   border-b border-theme-border last:border-b-0
+                                                   hover:bg-[rgb(var(--color-muted))] transition-colors duration-150 cursor-pointer"
+                                    >
+                                        <div className="min-w-0 flex-1 mr-4">
+                                            <p className="text-sm font-medium text-theme-text-primary truncate max-w-xs sm:max-w-sm md:max-w-md">{t.meeting_title}</p>
+                                            <p className="text-xs text-theme-text-tertiary mt-0.5">
+                                                {new Date(t.meeting_date).toLocaleDateString()} · {t.participants.length} participants
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs text-theme-text-tertiary">{t.word_count.toLocaleString()} words</p>
+                                            <span className={`text-[10px] font-medium ${t.extraction_method === 'inline' ? 'text-brand-400' :
+                                                t.extraction_method === 'google_doc' ? 'text-accent-teal' :
+                                                    t.extraction_method === 'upload' ? 'text-emerald-400' : 'text-accent-violet'
+                                                }`}>
+                                                {t.extraction_method}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
             {/* Activity Feed */}
             {activity.length > 0 && (
                 <div className="glass-card overflow-hidden mt-8">
-                    <div className="p-6 border-b border-theme-border/[0.06]">
+                    <div className="p-6 border-b border-theme-border">
                         <h2 className="text-sm font-semibold text-theme-text-secondary uppercase tracking-wider">
                             Recent Activity
                         </h2>
                     </div>
-                    <div className="divide-y divide-theme-border/[0.04]">
+                    <div className="divide-y divide-theme-border">
                         {activity.map((entry) => (
                             <div key={entry.id} className="px-6 py-3 flex items-start gap-3">
                                 <span className={`mt-1 inline-block w-2 h-2 rounded-full flex-shrink-0 ${entry.event_type.includes('created') ? 'bg-emerald-500' :
@@ -280,7 +296,7 @@ function StatCard({ label, value, color, loading }: {
 }) {
     return (
         <div className="stat-card">
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${color} opacity-80`} />
+            {/* Accent bar handled by .stat-card::before in CSS */}
             <p className="text-xs text-theme-text-tertiary font-medium uppercase tracking-wider">{label}</p>
             <p className="text-3xl font-bold text-theme-text-primary mt-2">
                 {loading ? '—' : value}

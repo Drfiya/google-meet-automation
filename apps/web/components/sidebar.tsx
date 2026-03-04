@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './theme-toggle';
 import { SidebarUploadButton } from './upload-modal';
+import { TimezoneClock } from './timezone-clock';
 
 const NAV_ITEMS = [
     { href: '/', label: 'Dashboard', icon: '◆' },
@@ -17,7 +18,7 @@ const NAV_ITEMS = [
 
 /**
  * Sidebar navigation — persistent across all pages.
- * Glassmorphism style with active-state glow.
+ * Flat design with pill-shaped active states.
  */
 export function Sidebar() {
     const pathname = usePathname();
@@ -33,18 +34,20 @@ export function Sidebar() {
     }, []);
 
     return (
-        <aside className="fixed left-0 top-0 bottom-0 w-64 bg-theme-raised/80 backdrop-blur-2xl border-r border-theme-border/[0.06] flex flex-col z-50">
+        <aside className="fixed left-0 top-0 bottom-0 w-64 bg-theme-raised border-r border-theme-border flex flex-col z-50">
             {/* Brand */}
-            <div className="p-6 border-b border-theme-border/[0.06]">
+            <div className="p-6 border-b border-theme-border">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-accent-teal flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-brand-500/25">
-                        MT
-                    </div>
+                    <img
+                        src="https://rgltabjdjrbmbjrjoqga.supabase.co/storage/v1/object/public/community-assets/community-logo-1772070053980.png"
+                        alt="ScienceExperts.ai"
+                        className="w-14 h-14 rounded-lg object-contain"
+                    />
                     <div>
-                        <h1 className="text-sm font-semibold text-theme-text-primary tracking-tight">
-                            MeetScript
+                        <h1 className="text-base font-bold text-theme-text-primary tracking-tight">
+                            ScienceExperts
                         </h1>
-                        <p className="text-[11px] text-theme-text-tertiary font-medium">
+                        <p className="text-[11px] text-theme-text-secondary font-medium">
                             Transcript Pipeline
                         </p>
                     </div>
@@ -56,7 +59,7 @@ export function Sidebar() {
                 {/* Quick upload action */}
                 <SidebarUploadButton />
 
-                <div className="my-2 border-t border-theme-border/[0.06]" />
+                <div className="my-2 border-t border-theme-border" />
 
                 {NAV_ITEMS.map((item) => {
                     const isActive = item.href === '/'
@@ -68,11 +71,11 @@ export function Sidebar() {
                             key={item.href}
                             href={item.href}
                             className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+                flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-medium
                 transition-all duration-200 group
                 ${isActive
-                                    ? 'bg-brand-500/10 text-brand-400 shadow-sm shadow-brand-500/5'
-                                    : 'text-theme-text-secondary hover:text-theme-text-primary hover:bg-theme-border/[0.04]'
+                                    ? 'bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-neutral-100'
+                                    : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800'
                                 }
               `}
                         >
@@ -81,7 +84,7 @@ export function Sidebar() {
                             </span>
                             {item.label}
                             {item.href === '/action-items' && openCount !== null && openCount > 0 && (
-                                <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20">
+                                <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20">
                                     {openCount}
                                 </span>
                             )}
@@ -97,10 +100,11 @@ export function Sidebar() {
             </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t border-theme-border/[0.06]">
+            <div className="p-4 border-t border-theme-border space-y-3">
+                <TimezoneClock />
                 <ThemeToggle />
                 <p className="text-[11px] text-theme-text-muted text-center mt-2">
-                    3rd AI LLC — solutions@3rdaillc.com
+                    ScienceExperts.ai — Powered by 3rd AI LLC
                 </p>
             </div>
         </aside>
