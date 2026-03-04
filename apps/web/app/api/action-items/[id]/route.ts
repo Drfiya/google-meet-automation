@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '../../../../lib/supabase';
 import type { ActionItem } from '@meet-pipeline/shared';
+import { normalizeAssignee } from '@meet-pipeline/shared';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,7 +52,6 @@ export async function PATCH(
 
         if (body.title !== undefined) update.title = body.title;
         if (body.description !== undefined) update.description = body.description;
-        if (body.assigned_to !== undefined) update.assigned_to = body.assigned_to;
         if (body.priority !== undefined) update.priority = body.priority;
         if (body.due_date !== undefined) update.due_date = body.due_date;
         if (body.group_label !== undefined) update.group_label = body.group_label || null;
@@ -62,6 +62,18 @@ export async function PATCH(
                 update.completed_at = new Date().toISOString();
             } else {
                 update.completed_at = null;
+            }
+        }
+
+        // Normalize assignee if provided
+        let cloneAssignee: string | null = null;
+        if (body.assigned_to !== undefined) {
+            const assignees = normalizeAssignee(body.assigned_to);
+            update.assigned_to = assignees.length > 0 ? assignees[0] : null;
+
+            // If joint assignment, we'll clone the item for the second person after updating
+            if (assignees.length > 1) {
+                cloneAssignee = assignees[1];
             }
         }
 
@@ -78,6 +90,22 @@ export async function PATCH(
 
         if (!data) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        }
+
+        // Clone for the second assignee if this was a joint assignment
+        if (cloneAssignee && data) {
+            await supabase.from('action_items').insert({
+                title: data.title,
+                description: data.description,
+                transcript_id: data.transcript_id,
+                assigned_to: cloneAssignee,
+                status: data.status,
+                priority: data.priority,
+                due_date: data.due_date,
+                source_text: data.source_text,
+                created_by: data.created_by,
+                group_label: data.group_label,
+            });
         }
 
         // Log the update

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '../../../lib/supabase';
 import type { ActionItem } from '@meet-pipeline/shared';
+import { normalizeAssignee } from '@meet-pipeline/shared';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,38 +80,48 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'title is required' }, { status: 400 });
         }
 
+        // Normalize assignee — may yield 0, 1, or 2 canonical names
+        const assignees = normalizeAssignee(body.assigned_to);
+        const names = assignees.length > 0 ? assignees : [null];
+
+        const rows = names.map((name) => ({
+            title: body.title!.trim(),
+            description: body.description ?? null,
+            transcript_id: body.transcript_id ?? null,
+            assigned_to: name,
+            status: body.status ?? 'open',
+            priority: body.priority ?? 'medium',
+            due_date: body.due_date ?? null,
+            source_text: body.source_text ?? null,
+            created_by: body.created_by ?? 'manual',
+            group_label: body.group_label ?? null,
+        }));
+
         const { data, error } = await supabase
             .from('action_items')
-            .insert({
-                title: body.title.trim(),
-                description: body.description ?? null,
-                transcript_id: body.transcript_id ?? null,
-                assigned_to: body.assigned_to ?? null,
-                status: body.status ?? 'open',
-                priority: body.priority ?? 'medium',
-                due_date: body.due_date ?? null,
-                source_text: body.source_text ?? null,
-                created_by: body.created_by ?? 'manual',
-                group_label: body.group_label ?? null,
-            })
-            .select()
-            .single();
+            .insert(rows)
+            .select();
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        // Log the creation in activity_log
-        await supabase.from('activity_log').insert({
-            event_type: 'action_item_created',
-            entity_type: 'action_item',
-            entity_id: data.id,
-            actor: body.created_by === 'ai' ? 'system' : 'Lutfiya',
-            summary: `Action item created: ${data.title}`,
-            metadata: { priority: data.priority, assigned_to: data.assigned_to },
-        });
+        const inserted = data ?? [];
 
-        return NextResponse.json(data, { status: 201 });
+        // Log each creation in activity_log
+        for (const item of inserted) {
+            await supabase.from('activity_log').insert({
+                event_type: 'action_item_created',
+                entity_type: 'action_item',
+                entity_id: item.id,
+                actor: body.created_by === 'ai' ? 'system' : 'Lutfiya',
+                summary: `Action item created: ${item.title}`,
+                metadata: { priority: item.priority, assigned_to: item.assigned_to },
+            });
+        }
+
+        // Return first item for single-assignee case (backward compat), full array otherwise
+        return NextResponse.json(inserted.length === 1 ? inserted[0] : inserted, { status: 201 });
     } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
         return NextResponse.json({ error: msg }, { status: 500 });

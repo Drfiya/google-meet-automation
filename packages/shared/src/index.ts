@@ -4,3 +4,4 @@ export type { ExtractionMethod, LogStatus } from './types.js';
 export type { ActionItem, ActionItemStatus, ActionItemPriority, ActionItemCreatedBy } from './types.js';
 export type { ActivityLogEntry } from './types.js';
 export type { DayMeetingSummary, ScoreboardMetrics, CumulativeStats } from './types.js';
+export { normalizeAssignee, normalizeAssigneeSingle, CANONICAL_NAMES } from './normalize-assignee';

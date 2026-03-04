@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSupabase } from '../../../../lib/supabase';
+import { normalizeAssignee } from '@meet-pipeline/shared';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
  * 1. Fetch the transcript from the database
  * 2. Send the transcript text to Claude with an extraction prompt
  * 3. Parse the structured JSON response
- * 4. Bulk-insert the action items and log each creation
+ * 4. Normalize assignees, then bulk-insert the action items and log each creation
  */
 export async function POST(req: NextRequest) {
     try {
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
 Return a JSON array of objects with these fields:
 - title (string, required): A concise description of the action item
 - description (string | null): Additional context if needed
-- assigned_to (string | null): The person responsible, if mentioned
+- assigned_to (string | null): The person responsible. MUST be exactly one of: "Lutfiya Miller", "Chris Müller", or null. Never use alternate spellings like "Chris-Steven Müller", "Chris Muller", or "Chris Mueller". If the task is assigned to BOTH people, emit two separate action items — one for each person. Never use composite values like "Both" or "Lutfiya Miller and Chris Müller".
 - priority ("low" | "medium" | "high" | "urgent"): Infer from context and urgency cues
 - due_date (string | null): ISO date if a deadline is mentioned, otherwise null
 - source_text (string): The exact excerpt from the transcript that implies this action item
@@ -106,19 +107,29 @@ Return ONLY valid JSON, no markdown fences or extra text.`;
             return NextResponse.json({ items: [], count: 0 });
         }
 
-        // 4. Bulk-insert action items
-        const rows = extracted.map((item) => ({
-            transcript_id,
-            title: item.title,
-            description: item.description ?? null,
-            assigned_to: item.assigned_to ?? null,
-            status: 'open',
-            priority: item.priority ?? 'medium',
-            due_date: item.due_date ?? null,
-            source_text: item.source_text ?? null,
-            created_by: 'ai',
-            group_label: item.group_label ?? null,
-        }));
+        // 4. Normalize assignees and build insertion rows.
+        //    If normalization yields two names (joint assignment), duplicate the item.
+        const rows: Record<string, unknown>[] = [];
+
+        for (const item of extracted) {
+            const assignees = normalizeAssignee(item.assigned_to);
+            const names = assignees.length > 0 ? assignees : [null];
+
+            for (const name of names) {
+                rows.push({
+                    transcript_id,
+                    title: item.title,
+                    description: item.description ?? null,
+                    assigned_to: name,
+                    status: 'open',
+                    priority: item.priority ?? 'medium',
+                    due_date: item.due_date ?? null,
+                    source_text: item.source_text ?? null,
+                    created_by: 'ai',
+                    group_label: item.group_label ?? null,
+                });
+            }
+        }
 
         const { data: inserted, error: insertError } = await supabase
             .from('action_items')
